@@ -28,6 +28,11 @@
 
 - Hint levels are fixed at three (structure nudge, concept pointer, no model answer). The candidate does not choose the level, to keep evaluation of practice sessions consistent.
 
+**History list:**
+
+- Sessions with hints show a small "Hints used" indicator with the count. The indicator is visible only to the candidate, on this computer.
+- The indicator is local display only. It is not sent anywhere and is included in exports only as the hint count and timestamps, as described above.
+
 **Open questions:**
 
-- Should a session with hints be marked differently in the history list?
+- None for the MVP.
