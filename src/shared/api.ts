@@ -14,8 +14,19 @@ export interface SavedSession {
   source?: 'typed' | 'voice'
   // The transcript of a voice answer. Audio is never stored.
   transcript?: string
+  // Set when the answer was part of a round with screen recording. Offset is where this answer starts in the recording.
+  recordingId?: string
+  recordingOffsetMs?: number
   createdAt: number
 }
+
+// Shown before any screen recording starts. Recording is always optional and separate from the practice notice.
+export const SCREEN_NOTICE = [
+  'Screen recording is optional and off unless you turn it on for a round.',
+  'The recording stays on this computer, in the app data folder. It is not uploaded or sent anywhere.',
+  'No AI looks at the screen during a round. The recording is used only for replay.',
+  'Recordings are deleted automatically after the number of days you choose, unless you keep them.'
+]
 
 export const VOICE_NOTICE = [
   'Your voice is recorded only while you hold the button, and it is turned into text on this computer.',
@@ -54,9 +65,30 @@ export interface MockApi {
   }
   sessions: {
     list(): Promise<SavedSession[]>
-    save(requestId: string, session: { question: string; answer: string; feedback: string; source?: 'typed' | 'voice'; transcript?: string }): Promise<Result>
+    save(
+      requestId: string,
+      session: {
+        question: string
+        answer: string
+        feedback: string
+        source?: 'typed' | 'voice'
+        transcript?: string
+        recordingId?: string
+        recordingOffsetMs?: number
+      }
+    ): Promise<Result>
     // Candidate-initiated only. Opens a save dialog for one session.
     exportOne(id: string): Promise<Result>
+  }
+  screen: {
+    // Single-use token for one screen recording. Accepted screen notice required before recording starts.
+    acknowledge(): Promise<string>
+    begin(token: string, retentionDays: 7 | 30): Promise<{ ok: true; id: string } | { ok: false; error: string }>
+  }
+  recordings: {
+    save(id: string, bytes: Uint8Array): Promise<Result>
+    read(id: string): Promise<Uint8Array | null>
+    delete(id: string): Promise<Result>
   }
   voice: {
     // Single-use token for one voice answer. Accepted voice notice required before recording.

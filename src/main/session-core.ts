@@ -17,7 +17,13 @@ export function parseStoredSession(raw: string): SavedSession | null {
       createdAt: parsed.createdAt,
       ...(typeof parsed.consentAt === 'number' ? { consentAt: parsed.consentAt } : {}),
       ...(parsed.source === 'typed' || parsed.source === 'voice' ? { source: parsed.source } : {}),
-      ...(typeof parsed.transcript === 'string' ? { transcript: parsed.transcript } : {})
+      ...(typeof parsed.transcript === 'string' ? { transcript: parsed.transcript } : {}),
+      ...(typeof parsed.recordingId === 'string' && /^[a-zA-Z0-9-]{8,64}$/.test(parsed.recordingId)
+        ? { recordingId: parsed.recordingId }
+        : {}),
+      ...(typeof parsed.recordingOffsetMs === 'number' && parsed.recordingOffsetMs >= 0
+        ? { recordingOffsetMs: parsed.recordingOffsetMs }
+        : {})
     }
   } catch {
     return null

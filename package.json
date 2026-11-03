@@ -9,7 +9,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node --experimental-strip-types --test src/main/consent-core.test.ts src/main/session-core.test.ts src/main/question-set-core.test.ts src/main/mic-permission-core.test.ts src/renderer/recording-core.test.ts src/main/transcribe-core.test.ts src/renderer/wav-core.test.ts src/renderer/round-core.test.ts",
+    "test": "node --experimental-strip-types --test src/main/consent-core.test.ts src/main/session-core.test.ts src/main/question-set-core.test.ts src/main/mic-permission-core.test.ts src/renderer/recording-core.test.ts src/main/transcribe-core.test.ts src/renderer/wav-core.test.ts src/renderer/round-core.test.ts src/main/screen-consent-core.test.ts src/main/recording-core.test.ts",
     "package": "npm run build && electron-builder --win"
   },
   "dependencies": {

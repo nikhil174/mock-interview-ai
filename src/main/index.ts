@@ -7,6 +7,8 @@ import { registerSecretHandlers } from './secrets'
 import { registerSessionHandlers } from './sessions'
 import { registerQuestionSetHandlers } from './question-sets'
 import { registerTranscribeHandlers } from './transcribe'
+import { registerScreenConsentHandlers } from './screen-consent'
+import { cleanupExpiredRecordings, registerRecordingHandlers } from './recordings'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -54,6 +56,9 @@ app.whenReady().then(() => {
   registerSessionHandlers()
   registerQuestionSetHandlers()
   registerTranscribeHandlers()
+  registerScreenConsentHandlers()
+  registerRecordingHandlers()
+  cleanupExpiredRecordings(Date.now())
   createWindow()
 
   app.on('activate', () => {
