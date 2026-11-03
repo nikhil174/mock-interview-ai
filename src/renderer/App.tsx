@@ -43,7 +43,6 @@ export default function App() {
       return
     }
 
-    const consentAt = Date.now()
     const requestId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
     requestRef.current = requestId
     cancelledRef.current = false
@@ -52,16 +51,18 @@ export default function App() {
     setError(null)
     setBusy(true)
     try {
-      const result = await window.api.feedback.start(requestId, question, text)
+      // The main process issues the consent token; the renderer can't make one itself.
+      const consentToken = await window.api.consent.acknowledge()
+      const result = await window.api.feedback.start(requestId, consentToken, question, text)
       if (!result.ok) {
         setError(result.error)
       } else if (!cancelledRef.current && feedbackRef.current.trim()) {
-        await window.api.sessions.save({
+        const saved = await window.api.sessions.save(requestId, {
           question,
           answer: text,
-          feedback: feedbackRef.current,
-          consentAt
+          feedback: feedbackRef.current
         })
+        if (!saved.ok) setError(saved.error)
         setSessions(await window.api.sessions.list())
       }
     } finally {

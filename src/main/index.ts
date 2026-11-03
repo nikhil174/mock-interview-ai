@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { registerConsentHandlers } from './consent'
 import { registerFeedbackHandlers } from './feedback'
 import { registerSecretHandlers } from './secrets'
 import { registerSessionHandlers } from './sessions'
@@ -26,6 +27,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   registerSecretHandlers()
+  registerConsentHandlers()
   registerFeedbackHandlers()
   registerSessionHandlers()
   createWindow()

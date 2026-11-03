@@ -1,4 +1,4 @@
-// Shared between main, preload and renderer. Types only.
+// Shared between main, preload and renderer. Types only, plus the practice notice text.
 
 export type Result = { ok: true } | { ok: false; error: string }
 
@@ -7,14 +7,16 @@ export interface SavedSession {
   question: string
   answer: string
   feedback: string
-  // When the practice notice was acknowledged for this session.
-  consentAt: number
+  // Set by the main process when the practice notice was accepted.
+  // Missing on sessions saved before consent gating existed (legacy data).
+  consentAt?: number
   createdAt: number
 }
 
 export const PRACTICE_NOTICE = [
   'This is practice. The AI reads your answer and gives feedback on it.',
-  'Your answer and the feedback are saved on this computer and sent to DeepSeek to generate the feedback.',
+  'Your question and your answer are sent to DeepSeek to generate the feedback.',
+  'Each session is saved as a JSON file on this computer, with the question, your answer, and the feedback.',
   'Do not use this during a live interview or a proctored test.'
 ]
 
@@ -29,12 +31,16 @@ export interface MockApi {
     set(key: string): Promise<Result>
     clear(): Promise<void>
   }
+  consent: {
+    // Asks the main process for a single-use token. Called when the user accepts the notice and asks for feedback.
+    acknowledge(): Promise<string>
+  }
   sessions: {
     list(): Promise<SavedSession[]>
-    save(session: Omit<SavedSession, 'id' | 'createdAt'>): Promise<void>
+    save(requestId: string, session: { question: string; answer: string; feedback: string }): Promise<Result>
   }
   feedback: {
-    start(requestId: string, question: string, answer: string): Promise<Result>
+    start(requestId: string, consentToken: string, question: string, answer: string): Promise<Result>
     cancel(requestId: string): void
     onChunk(cb: (chunk: FeedbackChunk) => void): () => void
   }

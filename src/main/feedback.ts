@@ -1,6 +1,8 @@
 import { ipcMain } from 'electron'
 import OpenAI from 'openai'
 import type { Result } from '../shared/api'
+import { authorizeFeedback } from './consent-core'
+import { consentStore } from './consent'
 import { readKey } from './secrets'
 
 // DeepSeek exposes an OpenAI-compatible API, so the OpenAI SDK works with a different base URL.
@@ -28,7 +30,11 @@ const controllers = new Map<string, AbortController>()
 export function registerFeedbackHandlers(): void {
   ipcMain.handle(
     'feedback:start',
-    async (event, requestId: string, question: string, answer: string): Promise<Result> => {
+    async (event, requestId: string, consentToken: string, question: string, answer: string): Promise<Result> => {
+      // Consent is enforced here, not in the renderer. Direct IPC calls without a valid token are refused.
+      const decision = authorizeFeedback(consentStore, consentToken, String(requestId), Date.now())
+      if (!decision.ok) return decision
+
       const apiKey = readKey()
       if (!apiKey) return { ok: false, error: 'No DeepSeek API key saved yet.' }
 
