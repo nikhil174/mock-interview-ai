@@ -23,10 +23,15 @@ export function registerSessionHandlers(): void {
   ipcMain.handle(
     'sessions:save',
     (_e, session: Omit<SavedSession, 'id' | 'createdAt'>): void => {
+      // A session without an acknowledged notice is not saved.
+      if (!session.consentAt || session.consentAt <= 0) {
+        throw new Error('Practice notice must be acknowledged before saving a session.')
+      }
       const full: SavedSession = {
         question: String(session.question),
         answer: String(session.answer),
         feedback: String(session.feedback),
+        consentAt: Number(session.consentAt),
         id: randomUUID(),
         createdAt: Date.now()
       }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { SavedSession } from '../shared/api'
+import { PRACTICE_NOTICE, type SavedSession } from '../shared/api'
 import { CATEGORIES, pickQuestion, type Category } from './questions'
 
 type Filter = Category | 'All'
@@ -16,6 +16,7 @@ export default function App() {
   const [hasKey, setHasKey] = useState(false)
   const [showKey, setShowKey] = useState(false)
   const [keyInput, setKeyInput] = useState('')
+  const [noticeAccepted, setNoticeAccepted] = useState(false)
 
   const requestRef = useRef<string | null>(null)
   const feedbackRef = useRef('')
@@ -32,12 +33,17 @@ export default function App() {
   async function getFeedback() {
     const text = answer.trim()
     if (!text || busy) return
+    if (!noticeAccepted) {
+      setError('Read and accept the practice notice before getting feedback.')
+      return
+    }
     if (!hasKey) {
       setShowKey(true)
       setError('Add your DeepSeek API key first.')
       return
     }
 
+    const consentAt = Date.now()
     const requestId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
     requestRef.current = requestId
     cancelledRef.current = false
@@ -53,7 +59,8 @@ export default function App() {
         await window.api.sessions.save({
           question,
           answer: text,
-          feedback: feedbackRef.current
+          feedback: feedbackRef.current,
+          consentAt
         })
         setSessions(await window.api.sessions.list())
       }
@@ -196,11 +203,27 @@ export default function App() {
               onChange={(e) => setAnswer(e.target.value)}
               placeholder="Answer in your own words. Feedback will critique your answer, not replace it."
             />
+            <div className="keybox">
+              <strong>Practice notice</strong>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {PRACTICE_NOTICE.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={noticeAccepted}
+                  onChange={(e) => setNoticeAccepted(e.target.checked)}
+                />{' '}
+                I understand this is practice, not a live interview or test.
+              </label>
+            </div>
             <div className="toolbar">
               <button
                 className="primary"
                 onClick={() => void getFeedback()}
-                disabled={busy || !answer.trim()}
+                disabled={busy || !answer.trim() || !noticeAccepted}
               >
                 {busy ? 'Getting feedback...' : 'Get feedback'}
               </button>

@@ -7,8 +7,16 @@ export interface SavedSession {
   question: string
   answer: string
   feedback: string
+  // When the practice notice was acknowledged for this session.
+  consentAt: number
   createdAt: number
 }
+
+export const PRACTICE_NOTICE = [
+  'This is practice. The AI reads your answer and gives feedback on it.',
+  'Your answer and the feedback are saved on this computer and sent to DeepSeek to generate the feedback.',
+  'Do not use this during a live interview or a proctored test.'
+]
 
 export interface FeedbackChunk {
   requestId: string
