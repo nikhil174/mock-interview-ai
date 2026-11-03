@@ -54,7 +54,7 @@ export interface MockApi {
   }
   sessions: {
     list(): Promise<SavedSession[]>
-    save(requestId: string, session: { question: string; answer: string; feedback: string }): Promise<Result>
+    save(requestId: string, session: { question: string; answer: string; feedback: string; source?: 'typed' | 'voice'; transcript?: string }): Promise<Result>
     // Candidate-initiated only. Opens a save dialog for one session.
     exportOne(id: string): Promise<Result>
   }

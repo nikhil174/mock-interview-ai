@@ -31,7 +31,7 @@ export function registerSessionHandlers(): void {
   // The renderer passes only the requestId and content. The consent time is taken from the main process.
   ipcMain.handle(
     'sessions:save',
-    (_e, requestId: string, session: { question: string; answer: string; feedback: string }): Result => {
+    (_e, requestId: string, session: { question: string; answer: string; feedback: string; source?: string; transcript?: string }): Result => {
       const consent = consentForSave(consentStore, String(requestId))
       if (!consent.ok) return consent
 
@@ -40,6 +40,8 @@ export function registerSessionHandlers(): void {
         answer: String(session.answer),
         feedback: String(session.feedback),
         consentAt: consent.consentAt,
+        ...(session.source === 'voice' || session.source === 'typed' ? { source: session.source } : {}),
+        ...(typeof session.transcript === 'string' ? { transcript: session.transcript.slice(0, 20_000) } : {}),
         id: randomUUID(),
         createdAt: Date.now()
       }

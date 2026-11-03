@@ -9,6 +9,8 @@ export default function App() {
   const [filter, setFilter] = useState<string>('All')
   const [question, setQuestion] = useState(() => pickFrom(BUILT_IN_QUESTIONS, 'All'))
   const [importNote, setImportNote] = useState<string | null>(null)
+  const [source, setSource] = useState<'typed' | 'voice'>('typed')
+  const [transcript, setTranscript] = useState('')
   const [exportNote, setExportNote] = useState<string | null>(null)
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState('')
@@ -31,6 +33,8 @@ export default function App() {
     setFeedback('')
     setError(null)
     setViewing(null)
+    setSource('typed')
+    setTranscript('')
   }
 
   async function importSet() {
@@ -93,7 +97,9 @@ export default function App() {
         const saved = await window.api.sessions.save(requestId, {
           question,
           answer: text,
-          feedback: feedbackRef.current
+          feedback: feedbackRef.current,
+          source,
+          transcript: source === 'voice' ? transcript : undefined
         })
         if (!saved.ok) setError(saved.error)
         setSessions(await window.api.sessions.list())
@@ -243,7 +249,16 @@ export default function App() {
         ) : (
           <>
             <h2 style={{ fontSize: 16, margin: '4px 0' }}>{question}</h2>
-            <RecordingControls onFail={(m) => setError(m)} />
+            <RecordingControls
+              busy={busy}
+              onFail={(m) => setError(m)}
+              onTranscript={(t) => {
+                setAnswer((a) => (a.trim() ? `${a.trim()} ${t}` : t))
+                setSource('voice')
+                setTranscript((prev) => (prev ? `${prev} ${t}` : t))
+                setError(null)
+              }}
+            />
             <textarea
               aria-label="Your answer"
               value={answer}
