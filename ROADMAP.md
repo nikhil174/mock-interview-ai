@@ -66,16 +66,16 @@
 2. **Recording state machine (pure logic, tested).** States: idle, recording, stopped, failed. Any failure moves to a state where the typed answer is restored.
 3. **Renderer controls.** Start and stop buttons plus a visible "Recording" indicator. No network calls in this phase.
 
-**Phase 2: tasks 4 to 7. Blocked on the transcription provider decision.**
+**Phase 2: tasks 4 to 7. Provider decided (local Whisper-style model), so these can start after Phase 1 is merged.**
 
 4. **Voice consent.** A separate voice notice, accepted by the candidate, and a single-use token issued by the main process, following the existing consent pattern. Transcript consent is separate from audio retention consent.
-5. **Transcription provider.** Unresolved. Options under consideration: a cloud streaming provider, a local model such as Whisper, or Windows built-in speech recognition. The choice changes the privacy notice, so it must be settled before this task starts. A thin adapter sits behind one function so the provider can change later.
+5. **Transcription provider.** Decided: a local Whisper-style model (whisper.cpp) running on the candidate's computer. Audio does not leave the machine, so the voice notice stays simple. Trade-offs: a larger download and slower transcription on older laptops. A thin adapter sits behind one function so the provider can change later. A cloud provider would need a new notice and a new decision.
 6. **Session fields.** `source` (voice or typed) and `transcript`, with legacy-safe parsing and tests. Older sessions without these fields still load.
 7. **Fallback and save path.** The typed answer is restored on any failure, and saving still requires consent in the main process.
 
 **Audio retention (separate, opt-in).** Audio is discarded after transcription by default. Keeping audio for a saved session requires its own opt-in, separate from transcript consent, and is stored as a separate file. Export excludes audio unless the candidate chooses to include it.
 
-**Provider decision:** unresolved. Do not start task 5 until it is recorded here.
+**Provider decision:** local Whisper-style model (whisper.cpp), chosen so audio stays on the candidate's computer. Recorded as a recommendation pending the owner's sign-off; a cloud provider would require revisiting this section and the voice notice.
 
 ## Interview Simulator (epic)
 
