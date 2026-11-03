@@ -97,3 +97,18 @@
 - **No undisclosed live answer generation.** Nothing the AI produces is shown to the candidate during an attempt, apart from the candidate's own transcript and the interviewer's scripted follow-up questions.
 - **Same consent and retention rules for each phase.** Audio and screen recordings are not kept by default. Each kind of retained data needs its own opt-in.
 - **Disclosed AI-collaboration mode is out of scope.** It is an evaluation format, not practice. Any proposal for it needs written company authorization and is evaluated separately.
+
+### Phase 2 status and manual setup (Windows)
+
+Phase 2 code is in place. Transcription needs two files that are installed by hand, because they are downloaded outside the app:
+
+1. `whisper-cli.exe` from the whisper.cpp Windows release, placed at `%APPDATA%\Mock Interview AI\whisper\whisper-cli.exe`. (`%APPDATA%` is the Roaming folder for the app's user data.)
+2. The English base model `ggml-base.en.bin` from the whisper.cpp model downloads, placed at `%APPDATA%\Mock Interview AI\models\ggml-base.en.bin`.
+
+Until both are present, the app shows "Voice transcription is not set up on this computer. Type your answer instead." Typed answers keep working either way.
+
+Known limits:
+
+- Recorded audio is converted to 16 kHz WAV in the window, then passed to whisper.cpp through a temporary file that is deleted right after each run.
+- A voice answer's source is marked "voice" for the whole session, even if the candidate also typed some of it.
+- Transcription accuracy and speed have not been measured yet.
