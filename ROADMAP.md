@@ -36,3 +36,24 @@
 **Open questions:**
 
 - None for the MVP.
+
+## Practice-mode voice answers
+
+**Status:** planned, not started.
+
+**Goal:** Let a candidate answer a practice question aloud, with the answer transcribed and used for feedback. This is practice only.
+
+**Design:**
+
+- Visible recording controls: start, stop, and a clear on-screen indicator while the microphone is live.
+- Streaming transcription with partial results shown as they arrive.
+- A typed-answer fallback that is always available if the microphone, transcription, or network fails. The typed answer is never lost.
+- Explicit consent before the first recording, separate from the practice notice.
+- No audio retention by default. Audio is discarded after transcription unless the candidate chooses to keep it for a saved session.
+- Auditable session records: the transcript, the source (voice or typed), and the consent time.
+
+**Safeguards:**
+
+- Practice only. The practice notice states that voice answers are not available in live interviews or proctored tests.
+- Audio and transcripts are not sent anywhere except to produce the transcript and feedback.
+- Export follows the same rules as other sessions: candidate-initiated only, and audio is excluded unless the candidate chooses to include it.
