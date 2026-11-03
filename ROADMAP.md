@@ -76,3 +76,24 @@
 **Audio retention (separate, opt-in).** Audio is discarded after transcription by default. Keeping audio for a saved session requires its own opt-in, separate from transcript consent, and is stored as a separate file. Export excludes audio unless the candidate chooses to include it.
 
 **Provider decision:** unresolved. Do not start task 5 until it is recorded here.
+
+## Interview Simulator (epic)
+
+**Status:** planned, not started. Phases are scoped one at a time.
+
+**Goal:** Let candidates practice under conditions closer to a real interview, while the AI acts as simulator and evaluator, not as a live answer source.
+
+**Phases, in order:**
+
+1. **Voice answers and live transcription.** Builds on the practice-mode voice feature (Phase 1 and Phase 2 in the breakdown above). Live transcription shows the candidate's own speech as they talk.
+2. **Timed rounds and interviewer follow-ups.** Timed practice rounds with interviewer-style follow-up questions. Feedback comes after each response.
+3. **Opt-in, local screen recording for replay.** Screen recording is optional, requires explicit consent, and stays on the candidate's computer. It's used only for replay.
+4. **Cross-session analytics.** Trends across saved sessions, built from transcripts and audit metadata.
+
+**Limits that apply to every phase:**
+
+- **No live AI screen commentary.** The AI never watches the screen and comments during a round.
+- **No hints during timed rounds.** The practice-only hint flow applies only to untimed answers.
+- **No undisclosed live answer generation.** Nothing the AI produces is shown to the candidate during an attempt, apart from the candidate's own transcript and the interviewer's scripted follow-up questions.
+- **Same consent and retention rules for each phase.** Audio and screen recordings are not kept by default. Each kind of retained data needs its own opt-in.
+- **Disclosed AI-collaboration mode is out of scope.** It is an evaluation format, not practice. Any proposal for it needs written company authorization and is evaluated separately.
