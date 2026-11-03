@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { PRACTICE_NOTICE, type SavedSession } from '../shared/api'
 import { BUILT_IN_QUESTIONS, categoriesOf, pickFrom, type QuestionItem } from './questions'
 import RecordingControls from './RecordingControls'
+import RoundPanel, { type RoundState } from './RoundPanel'
+import { followUpFor, nextPhase, remainingSeconds, ROUND_LIMIT_SECONDS } from './round-core'
+
+type ActiveRound = RoundState & { startedAt: number; category: string }
 
 export default function App() {
   const [pool, setPool] = useState<QuestionItem[]>(BUILT_IN_QUESTIONS)
@@ -23,9 +27,13 @@ export default function App() {
   const [keyInput, setKeyInput] = useState('')
   const [noticeAccepted, setNoticeAccepted] = useState(false)
 
+  const [round, setRound] = useState<ActiveRound | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+
   const requestRef = useRef<string | null>(null)
   const feedbackRef = useRef('')
   const cancelledRef = useRef(false)
+  const submittingRef = useRef(false)
 
   function nextQuestion(f: string = filter, p: QuestionItem[] = pool) {
     setQuestion(pickFrom(p, f))
@@ -67,6 +75,38 @@ export default function App() {
     setExportNote(result.ok ? 'Exported. Only the question, your answer, and the feedback were included.' : result.error)
   }
 
+  // Gets feedback for one answer and saves it. Used by both normal practice and each timed-round response.
+  async function runFeedback(q: string, text: string, src: 'typed' | 'voice', tr: string): Promise<void> {
+    const requestId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+    requestRef.current = requestId
+    cancelledRef.current = false
+    feedbackRef.current = ''
+    setFeedback('')
+    setError(null)
+    setBusy(true)
+    try {
+      // The main process issues the consent token; the renderer can't make one itself.
+      const consentToken = await window.api.consent.acknowledge()
+      const result = await window.api.feedback.start(requestId, consentToken, q, text)
+      if (!result.ok) {
+        setError(result.error)
+      } else if (!cancelledRef.current && feedbackRef.current.trim()) {
+        const saved = await window.api.sessions.save(requestId, {
+          question: q,
+          answer: text,
+          feedback: feedbackRef.current,
+          source: src,
+          transcript: src === 'voice' ? tr : undefined
+        })
+        if (!saved.ok) setError(saved.error)
+        setSessions(await window.api.sessions.list())
+      }
+    } finally {
+      requestRef.current = null
+      setBusy(false)
+    }
+  }
+
   async function getFeedback() {
     const text = answer.trim()
     if (!text || busy) return
@@ -79,36 +119,79 @@ export default function App() {
       setError('Add your DeepSeek API key first.')
       return
     }
+    await runFeedback(question, text, source, transcript)
+  }
 
-    const requestId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
-    requestRef.current = requestId
-    cancelledRef.current = false
-    feedbackRef.current = ''
+  // Timed round: one main question, then one interviewer follow-up. Each response gets feedback.
+  // No hints are offered in a round.
+  function startRound() {
+    if (!noticeAccepted) {
+      setError('Read and accept the practice notice before starting a round.')
+      return
+    }
+    if (!hasKey) {
+      setShowKey(true)
+      setError('Add your DeepSeek API key first.')
+      return
+    }
+    const category = pool.find((q) => q.text === question)?.category ?? 'General'
+    setRound({
+      phase: 'main',
+      mainQuestion: question,
+      followUp: '',
+      currentQuestion: question,
+      startedAt: Date.now(),
+      category
+    })
+    setNow(Date.now())
+    setAnswer('')
+    setSource('typed')
+    setTranscript('')
     setFeedback('')
     setError(null)
-    setBusy(true)
+  }
+
+  async function submitRoundAnswer(auto: boolean) {
+    if (!round || round.phase === 'done' || submittingRef.current) return
+    submittingRef.current = true
+    const current = round
+    const text = answer.trim()
     try {
-      // The main process issues the consent token; the renderer can't make one itself.
-      const consentToken = await window.api.consent.acknowledge()
-      const result = await window.api.feedback.start(requestId, consentToken, question, text)
-      if (!result.ok) {
-        setError(result.error)
-      } else if (!cancelledRef.current && feedbackRef.current.trim()) {
-        const saved = await window.api.sessions.save(requestId, {
-          question,
-          answer: text,
-          feedback: feedbackRef.current,
-          source,
-          transcript: source === 'voice' ? transcript : undefined
-        })
-        if (!saved.ok) setError(saved.error)
-        setSessions(await window.api.sessions.list())
+      if (text) {
+        const q = current.phase === 'main' ? current.mainQuestion : current.followUp
+        await runFeedback(q, text, source, transcript)
+      } else if (auto) {
+        setError('Time is up. No answer was given for this question.')
       }
+      if (nextPhase(current.phase) === 'followup') {
+        const fu = followUpFor(current.category, Date.now())
+        setRound({ ...current, phase: 'followup', followUp: fu, currentQuestion: fu, startedAt: Date.now() })
+        setNow(Date.now())
+      } else {
+        setRound({ ...current, phase: 'done' })
+      }
+      setAnswer('')
+      setSource('typed')
+      setTranscript('')
     } finally {
-      requestRef.current = null
-      setBusy(false)
+      submittingRef.current = false
     }
   }
+
+  // Ticks once a second while a round is running.
+  useEffect(() => {
+    if (!round || round.phase === 'done') return
+    const id = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [round?.phase, round?.startedAt])
+
+  const remaining =
+    round && round.phase !== 'done' ? remainingSeconds(round.startedAt, now, ROUND_LIMIT_SECONDS) : null
+
+  // When the time runs out, submit whatever is in the answer box.
+  useEffect(() => {
+    if (remaining === 0) void submitRoundAnswer(true)
+  }, [remaining])
 
   function stopFeedback() {
     if (requestRef.current) {
@@ -246,6 +329,34 @@ export default function App() {
               <pre>{viewing.feedback}</pre>
             </section>
           </>
+        ) : round ? (
+          <>
+            <RoundPanel
+              round={round}
+              remaining={remaining ?? 0}
+              answer={answer}
+              setAnswer={setAnswer}
+              busy={busy}
+              onSubmit={() => void submitRoundAnswer(false)}
+              onFail={(m) => setError(m)}
+              onTranscript={(t) => {
+                setAnswer((a) => (a.trim() ? `${a.trim()} ${t}` : t))
+                setSource('voice')
+                setTranscript((prev) => (prev ? `${prev} ${t}` : t))
+                setError(null)
+              }}
+              onNewRound={() => {
+                setRound(null)
+                nextQuestion()
+              }}
+            />
+            {(feedback || error) && (
+              <section className="summary">
+                {error && <p className="error">{error}</p>}
+                <pre>{feedback}</pre>
+              </section>
+            )}
+          </>
         ) : (
           <>
             <h2 style={{ fontSize: 16, margin: '4px 0' }}>{question}</h2>
@@ -290,6 +401,9 @@ export default function App() {
                 {busy ? 'Getting feedback...' : 'Get feedback'}
               </button>
               {busy && <button onClick={stopFeedback}>Stop</button>}
+              <button onClick={() => startRound()} disabled={busy}>
+                Start timed round (5 min)
+              </button>
             </div>
             {(feedback || error) && (
               <section className="summary">
