@@ -6,6 +6,7 @@ import type { Result, SavedSession } from '../shared/api'
 import { consentForSave } from './consent-core'
 import { consentStore } from './consent'
 import { parseStoredSession } from './session-core'
+import { recordingExists } from './recordings'
 
 // Each practice session is one JSON file in %APPDATA%\Mock Interview AI\sessions
 function sessionsDir(): string {
@@ -31,7 +32,7 @@ export function registerSessionHandlers(): void {
   // The renderer passes only the requestId and content. The consent time is taken from the main process.
   ipcMain.handle(
     'sessions:save',
-    (_e, requestId: string, session: { question: string; answer: string; feedback: string; source?: string; transcript?: string }): Result => {
+    (_e, requestId: string, session: { question: string; answer: string; feedback: string; source?: string; transcript?: string; recordingId?: string; recordingOffsetMs?: number }): Result => {
       const consent = consentForSave(consentStore, String(requestId))
       if (!consent.ok) return consent
 
@@ -42,6 +43,11 @@ export function registerSessionHandlers(): void {
         consentAt: consent.consentAt,
         ...(session.source === 'voice' || session.source === 'typed' ? { source: session.source } : {}),
         ...(typeof session.transcript === 'string' ? { transcript: session.transcript.slice(0, 20_000) } : {}),
+        // Only link a recording that exists on disk; a missing one is simply not linked.
+        ...(recordingExists(String(session.recordingId ?? '')) ? { recordingId: String(session.recordingId) } : {}),
+        ...(recordingExists(String(session.recordingId ?? '')) && typeof session.recordingOffsetMs === 'number' && session.recordingOffsetMs >= 0
+          ? { recordingOffsetMs: session.recordingOffsetMs }
+          : {}),
         id: randomUUID(),
         createdAt: Date.now()
       }

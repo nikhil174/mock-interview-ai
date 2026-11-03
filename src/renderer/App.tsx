@@ -4,6 +4,8 @@ import { BUILT_IN_QUESTIONS, categoriesOf, pickFrom, type QuestionItem } from '.
 import RecordingControls from './RecordingControls'
 import RoundPanel, { type RoundState } from './RoundPanel'
 import { followUpFor, nextPhase, remainingSeconds, ROUND_LIMIT_SECONDS } from './round-core'
+import { startScreenRecording, finishScreenRecording, discardScreenRecording, type ActiveRecording } from './screen-recorder'
+import ReplayPanel from './ReplayPanel'
 
 type ActiveRound = RoundState & { startedAt: number; category: string }
 
@@ -34,6 +36,13 @@ export default function App() {
   const feedbackRef = useRef('')
   const cancelledRef = useRef(false)
   const submittingRef = useRef(false)
+  const recRef = useRef<ActiveRecording | null>(null)
+  const [recOn, setRecOn] = useState(false)
+  const [retention, setRetention] = useState<7 | 30>(7)
+
+  useEffect(() => () => {
+    if (recRef.current) discardScreenRecording(recRef.current)
+  }, [])
 
   function nextQuestion(f: string = filter, p: QuestionItem[] = pool) {
     setQuestion(pickFrom(p, f))
@@ -76,7 +85,13 @@ export default function App() {
   }
 
   // Gets feedback for one answer and saves it. Used by both normal practice and each timed-round response.
-  async function runFeedback(q: string, text: string, src: 'typed' | 'voice', tr: string): Promise<void> {
+  async function runFeedback(
+    q: string,
+    text: string,
+    src: 'typed' | 'voice',
+    tr: string,
+    extra?: { recordingId?: string; recordingOffsetMs?: number }
+  ): Promise<void> {
     const requestId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
     requestRef.current = requestId
     cancelledRef.current = false
@@ -96,7 +111,8 @@ export default function App() {
           answer: text,
           feedback: feedbackRef.current,
           source: src,
-          transcript: src === 'voice' ? tr : undefined
+          transcript: src === 'voice' ? tr : undefined,
+          ...extra
         })
         if (!saved.ok) setError(saved.error)
         setSessions(await window.api.sessions.list())
@@ -124,7 +140,7 @@ export default function App() {
 
   // Timed round: one main question, then one interviewer follow-up. Each response gets feedback.
   // No hints are offered in a round.
-  function startRound() {
+  async function startRound() {
     if (!noticeAccepted) {
       setError('Read and accept the practice notice before starting a round.')
       return
@@ -133,6 +149,14 @@ export default function App() {
       setShowKey(true)
       setError('Add your DeepSeek API key first.')
       return
+    }
+    if (recOn) {
+      try {
+        recRef.current = await startScreenRecording(retention)
+      } catch (err) {
+        setError(`Screen recording could not start. ${err instanceof Error ? err.message : ''}`.trim())
+        return
+      }
     }
     const category = pool.find((q) => q.text === question)?.category ?? 'General'
     setRound({
@@ -159,7 +183,9 @@ export default function App() {
     try {
       if (text) {
         const q = current.phase === 'main' ? current.mainQuestion : current.followUp
-        await runFeedback(q, text, source, transcript)
+        const rec = recRef.current
+        const extra = rec ? { recordingId: rec.id, recordingOffsetMs: Math.max(0, current.startedAt - rec.startedAt) } : undefined
+        await runFeedback(q, text, source, transcript, extra)
       } else if (auto) {
         setError('Time is up. No answer was given for this question.')
       }
@@ -169,6 +195,7 @@ export default function App() {
         setNow(Date.now())
       } else {
         setRound({ ...current, phase: 'done' })
+        await finishRecording()
       }
       setAnswer('')
       setSource('typed')
@@ -176,6 +203,15 @@ export default function App() {
     } finally {
       submittingRef.current = false
     }
+  }
+
+  // Stops and saves the round's screen recording, if there is one.
+  async function finishRecording() {
+    const rec = recRef.current
+    recRef.current = null
+    if (!rec) return
+    const result = await finishScreenRecording(rec)
+    if (!result.ok) setError(result.error)
   }
 
   // Ticks once a second while a round is running.
@@ -321,6 +357,7 @@ export default function App() {
               <button onClick={() => void exportSession(viewing.id)}>Export this session</button>
             </div>
             {exportNote && <p className="hint">{exportNote}</p>}
+            {viewing.recordingId && <ReplayPanel recordingId={viewing.recordingId} offsetMs={viewing.recordingOffsetMs} />}
             <strong>Your answer</strong>
             <pre style={{ whiteSpace: 'pre-wrap', font: 'inherit', margin: 0 }}>
               {viewing.answer}
@@ -347,6 +384,7 @@ export default function App() {
               }}
               onNewRound={() => {
                 setRound(null)
+                void finishRecording()
                 nextQuestion()
               }}
             />
@@ -401,7 +439,20 @@ export default function App() {
                 {busy ? 'Getting feedback...' : 'Get feedback'}
               </button>
               {busy && <button onClick={stopFeedback}>Stop</button>}
-              <button onClick={() => startRound()} disabled={busy}>
+              <label>
+                <input type="checkbox" checked={recOn} onChange={(e) => setRecOn(e.target.checked)} /> Record my screen for
+                replay (optional, stays on this computer)
+              </label>
+              {recOn && (
+                <label>
+                  Keep for{' '}
+                  <select value={retention} onChange={(e) => setRetention(Number(e.target.value) as 7 | 30)}>
+                    <option value={7}>7 days</option>
+                    <option value={30}>30 days</option>
+                  </select>
+                </label>
+              )}
+              <button onClick={() => void startRound()} disabled={busy}>
                 Start timed round (5 min)
               </button>
             </div>
