@@ -57,3 +57,22 @@
 - Practice only. The practice notice states that voice answers are not available in live interviews or proctored tests.
 - Audio and transcripts are not sent anywhere except to produce the transcript and feedback.
 - Export follows the same rules as other sessions: candidate-initiated only, and audio is excluded unless the candidate chooses to include it.
+
+### Implementation breakdown: practice-mode voice answers
+
+**Phase 1 (first implementation phase): tasks 1 to 3. No provider needed.**
+
+1. **Permission rule (pure logic, tested).** Allow microphone access for the app's own window only, deny everything else. Enforced in the main process with `setPermissionRequestHandler`.
+2. **Recording state machine (pure logic, tested).** States: idle, recording, stopped, failed. Any failure moves to a state where the typed answer is restored.
+3. **Renderer controls.** Start and stop buttons plus a visible "Recording" indicator. No network calls in this phase.
+
+**Phase 2: tasks 4 to 7. Blocked on the transcription provider decision.**
+
+4. **Voice consent.** A separate voice notice, accepted by the candidate, and a single-use token issued by the main process, following the existing consent pattern. Transcript consent is separate from audio retention consent.
+5. **Transcription provider.** Unresolved. Options under consideration: a cloud streaming provider, a local model such as Whisper, or Windows built-in speech recognition. The choice changes the privacy notice, so it must be settled before this task starts. A thin adapter sits behind one function so the provider can change later.
+6. **Session fields.** `source` (voice or typed) and `transcript`, with legacy-safe parsing and tests. Older sessions without these fields still load.
+7. **Fallback and save path.** The typed answer is restored on any failure, and saving still requires consent in the main process.
+
+**Audio retention (separate, opt-in).** Audio is discarded after transcription by default. Keeping audio for a saved session requires its own opt-in, separate from transcript consent, and is stored as a separate file. Export excludes audio unless the candidate chooses to include it.
+
+**Provider decision:** unresolved. Do not start task 5 until it is recorded here.
