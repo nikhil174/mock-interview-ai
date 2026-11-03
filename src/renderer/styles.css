@@ -1,0 +1,144 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, 'Segoe UI', sans-serif;
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 160px;
+  border-right: 1px solid #8884;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+}
+
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  flex: 1;
+}
+
+.sidebar li {
+  padding: 8px;
+  cursor: pointer;
+  border-top: 1px solid #8882;
+}
+
+.sidebar li.active {
+  background: #3b82f622;
+}
+
+.sidebar .t {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar .d {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #8886;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+textarea {
+  flex: 1;
+  min-height: 120px;
+  resize: none;
+  padding: 8px;
+  font: inherit;
+  border-radius: 6px;
+  border: 1px solid #8886;
+  background: transparent;
+  color: inherit;
+}
+
+.keybox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #8884;
+  border-radius: 6px;
+}
+
+.keybox input {
+  padding: 6px;
+  font: inherit;
+}
+
+.hint {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.summary {
+  border-top: 1px solid #8884;
+  padding-top: 8px;
+  max-height: 40%;
+  overflow: auto;
+}
+
+.summary pre {
+  white-space: pre-wrap;
+  font: inherit;
+  margin: 0;
+}
+
+.error {
+  color: #dc2626;
+  margin: 0 0 6px;
+}
