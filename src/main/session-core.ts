@@ -15,7 +15,9 @@ export function parseStoredSession(raw: string): SavedSession | null {
       answer: parsed.answer,
       feedback: parsed.feedback,
       createdAt: parsed.createdAt,
-      ...(typeof parsed.consentAt === 'number' ? { consentAt: parsed.consentAt } : {})
+      ...(typeof parsed.consentAt === 'number' ? { consentAt: parsed.consentAt } : {}),
+      ...(parsed.source === 'typed' || parsed.source === 'voice' ? { source: parsed.source } : {}),
+      ...(typeof parsed.transcript === 'string' ? { transcript: parsed.transcript } : {})
     }
   } catch {
     return null
