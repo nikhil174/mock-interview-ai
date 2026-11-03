@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { PRACTICE_NOTICE, type SavedSession } from '../shared/api'
+import { PRACTICE_NOTICE, SCREEN_NOTICE, type SavedSession } from '../shared/api'
 import { BUILT_IN_QUESTIONS, categoriesOf, pickFrom, type QuestionItem } from './questions'
 import RecordingControls from './RecordingControls'
 import RoundPanel, { type RoundState } from './RoundPanel'
@@ -39,6 +39,7 @@ export default function App() {
   const recRef = useRef<ActiveRecording | null>(null)
   const [recOn, setRecOn] = useState(false)
   const [retention, setRetention] = useState<7 | 30>(7)
+  const [screenAccepted, setScreenAccepted] = useState(false)
 
   useEffect(() => () => {
     if (recRef.current) discardScreenRecording(recRef.current)
@@ -148,6 +149,10 @@ export default function App() {
     if (!hasKey) {
       setShowKey(true)
       setError('Add your DeepSeek API key first.')
+      return
+    }
+    if (recOn && !screenAccepted) {
+      setError('Read and accept the screen recording notice, or turn recording off.')
       return
     }
     if (recOn) {
@@ -440,17 +445,36 @@ export default function App() {
               </button>
               {busy && <button onClick={stopFeedback}>Stop</button>}
               <label>
-                <input type="checkbox" checked={recOn} onChange={(e) => setRecOn(e.target.checked)} /> Record my screen for
-                replay (optional, stays on this computer)
+                <input
+                  type="checkbox"
+                  checked={recOn}
+                  onChange={(e) => {
+                    setRecOn(e.target.checked)
+                    if (!e.target.checked) setScreenAccepted(false)
+                  }}
+                />{' '}
+                Record my screen for replay (optional, stays on this computer)
               </label>
               {recOn && (
-                <label>
-                  Keep for{' '}
-                  <select value={retention} onChange={(e) => setRetention(Number(e.target.value) as 7 | 30)}>
-                    <option value={7}>7 days</option>
-                    <option value={30}>30 days</option>
-                  </select>
-                </label>
+                <div className="keybox">
+                  <strong>Screen recording notice</strong>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    {SCREEN_NOTICE.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                  <label>
+                    Keep for{' '}
+                    <select value={retention} onChange={(e) => setRetention(Number(e.target.value) as 7 | 30)}>
+                      <option value={7}>7 days</option>
+                      <option value={30}>30 days</option>
+                    </select>
+                  </label>
+                  <label>
+                    <input type="checkbox" checked={screenAccepted} onChange={(e) => setScreenAccepted(e.target.checked)} />{' '}
+                    I understand the screen recording notice.
+                  </label>
+                </div>
               )}
               <button onClick={() => void startRound()} disabled={busy}>
                 Start timed round (5 min)
