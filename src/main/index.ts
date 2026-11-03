@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, session } from 'electron'
+import { allowMicrophone } from './mic-permission-core'
 import { join } from 'path'
 import { registerConsentHandlers } from './consent'
 import { registerFeedbackHandlers } from './feedback'
@@ -26,7 +27,26 @@ function createWindow(): void {
   }
 }
 
+// Only the app's own pages can get microphone access, and only for audio.
+function allowedOrigins(): string[] {
+  const dev = process.env['ELECTRON_RENDERER_URL']
+  return dev ? ['file://', new URL(dev).origin] : ['file://']
+}
+
+function registerPermissionHandlers(): void {
+  const ses = session.defaultSession
+  ses.setPermissionRequestHandler((_wc, permission, callback, details) => {
+    const mediaTypes = 'mediaTypes' in details ? details.mediaTypes : undefined
+    const requestingUrl = 'requestingUrl' in details ? details.requestingUrl : undefined
+    callback(allowMicrophone({ permission, mediaTypes, requestingUrl }, allowedOrigins()))
+  })
+  ses.setPermissionCheckHandler((_wc, permission, requestingOrigin) =>
+    allowMicrophone({ permission, mediaTypes: ['audio'], requestingUrl: requestingOrigin }, allowedOrigins())
+  )
+}
+
 app.whenReady().then(() => {
+  registerPermissionHandlers()
   registerSecretHandlers()
   registerConsentHandlers()
   registerFeedbackHandlers()

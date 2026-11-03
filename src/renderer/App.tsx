@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { PRACTICE_NOTICE, type SavedSession } from '../shared/api'
 import { BUILT_IN_QUESTIONS, categoriesOf, pickFrom, type QuestionItem } from './questions'
+import RecordingControls from './RecordingControls'
 
 export default function App() {
   const [pool, setPool] = useState<QuestionItem[]>(BUILT_IN_QUESTIONS)
@@ -242,6 +243,7 @@ export default function App() {
         ) : (
           <>
             <h2 style={{ fontSize: 16, margin: '4px 0' }}>{question}</h2>
+            <RecordingControls onFail={(m) => setError(m)} />
             <textarea
               aria-label="Your answer"
               value={answer}
