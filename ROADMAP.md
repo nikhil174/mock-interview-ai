@@ -19,11 +19,15 @@
 **Safeguards:**
 
 - Practice only. The practice notice states that hints are not available in live interviews or proctored tests.
-- Hint text is not sent anywhere except to generate that hint. It is not included in any export unless the candidate exports the session.
+- Hint text is not sent anywhere except to generate that hint.
+- Exports include the hint count and the request timestamps, but not the hint text by default. The candidate can choose to include the hint text when exporting.
 - No automatic sharing with a company or anyone else. Export remains candidate-initiated.
 - Hints must not reveal a full answer, a scoring rubric, or a complete code solution.
 
+**Decided for the MVP:**
+
+- Hint levels are fixed at three (structure nudge, concept pointer, no model answer). The candidate does not choose the level, to keep evaluation of practice sessions consistent.
+
 **Open questions:**
 
-- Should hint levels be fixed, or chosen by the candidate?
 - Should a session with hints be marked differently in the history list?
