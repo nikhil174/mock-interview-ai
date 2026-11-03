@@ -7,6 +7,7 @@ import { registerSecretHandlers } from './secrets'
 import { registerSessionHandlers } from './sessions'
 import { registerQuestionSetHandlers } from './question-sets'
 import { registerTranscribeHandlers } from './transcribe'
+import { registerScreenConsentHandlers } from './screen-consent'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -54,6 +55,7 @@ app.whenReady().then(() => {
   registerSessionHandlers()
   registerQuestionSetHandlers()
   registerTranscribeHandlers()
+  registerScreenConsentHandlers()
   createWindow()
 
   app.on('activate', () => {

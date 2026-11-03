@@ -17,6 +17,14 @@ export interface SavedSession {
   createdAt: number
 }
 
+// Shown before any screen recording starts. Recording is always optional and separate from the practice notice.
+export const SCREEN_NOTICE = [
+  'Screen recording is optional and off unless you turn it on for a round.',
+  'The recording stays on this computer, in the app data folder. It is not uploaded or sent anywhere.',
+  'No AI looks at the screen during a round. The recording is used only for replay.',
+  'Recordings are deleted automatically after the number of days you choose, unless you keep them.'
+]
+
 export const VOICE_NOTICE = [
   'Your voice is recorded only while you hold the button, and it is turned into text on this computer.',
   'The audio is discarded after it is transcribed. It is not saved and not sent anywhere.',
@@ -57,6 +65,10 @@ export interface MockApi {
     save(requestId: string, session: { question: string; answer: string; feedback: string; source?: 'typed' | 'voice'; transcript?: string }): Promise<Result>
     // Candidate-initiated only. Opens a save dialog for one session.
     exportOne(id: string): Promise<Result>
+  }
+  screen: {
+    // Single-use token for one screen recording. Accepted screen notice required before recording starts.
+    acknowledge(): Promise<string>
   }
   voice: {
     // Single-use token for one voice answer. Accepted voice notice required before recording.

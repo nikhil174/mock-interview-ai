@@ -17,6 +17,9 @@ const api: MockApi = {
     save: (requestId, session) => ipcRenderer.invoke('sessions:save', requestId, session),
     exportOne: (id) => ipcRenderer.invoke('sessions:export', id)
   },
+  screen: {
+    acknowledge: () => ipcRenderer.invoke('screen:acknowledge')
+  },
   voice: {
     acknowledge: () => ipcRenderer.invoke('voice:acknowledge')
   },
