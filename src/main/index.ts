@@ -4,6 +4,7 @@ import { registerConsentHandlers } from './consent'
 import { registerFeedbackHandlers } from './feedback'
 import { registerSecretHandlers } from './secrets'
 import { registerSessionHandlers } from './sessions'
+import { registerQuestionSetHandlers } from './question-sets'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -30,6 +31,7 @@ app.whenReady().then(() => {
   registerConsentHandlers()
   registerFeedbackHandlers()
   registerSessionHandlers()
+  registerQuestionSetHandlers()
   createWindow()
 
   app.on('activate', () => {

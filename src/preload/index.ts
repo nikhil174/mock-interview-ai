@@ -14,7 +14,11 @@ const api: MockApi = {
   },
   sessions: {
     list: () => ipcRenderer.invoke('sessions:list'),
-    save: (requestId, session) => ipcRenderer.invoke('sessions:save', requestId, session)
+    save: (requestId, session) => ipcRenderer.invoke('sessions:save', requestId, session),
+    exportOne: (id) => ipcRenderer.invoke('sessions:export', id)
+  },
+  questionSets: {
+    import: () => ipcRenderer.invoke('questionsets:import')
   },
   feedback: {
     start: (requestId, consentToken, question, answer) =>

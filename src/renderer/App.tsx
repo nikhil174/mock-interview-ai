@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { PRACTICE_NOTICE, type SavedSession } from '../shared/api'
-import { CATEGORIES, pickQuestion, type Category } from './questions'
-
-type Filter = Category | 'All'
+import { BUILT_IN_QUESTIONS, categoriesOf, pickFrom, type QuestionItem } from './questions'
 
 export default function App() {
-  const [filter, setFilter] = useState<Filter>('All')
-  const [question, setQuestion] = useState(() => pickQuestion('All'))
+  const [pool, setPool] = useState<QuestionItem[]>(BUILT_IN_QUESTIONS)
+  const [poolName, setPoolName] = useState<string | null>(null)
+  const [filter, setFilter] = useState<string>('All')
+  const [question, setQuestion] = useState(() => pickFrom(BUILT_IN_QUESTIONS, 'All'))
+  const [importNote, setImportNote] = useState<string | null>(null)
+  const [exportNote, setExportNote] = useState<string | null>(null)
   const [answer, setAnswer] = useState('')
   const [feedback, setFeedback] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -22,12 +24,42 @@ export default function App() {
   const feedbackRef = useRef('')
   const cancelledRef = useRef(false)
 
-  function nextQuestion(f: Filter = filter) {
-    setQuestion(pickQuestion(f))
+  function nextQuestion(f: string = filter, p: QuestionItem[] = pool) {
+    setQuestion(pickFrom(p, f))
     setAnswer('')
     setFeedback('')
     setError(null)
     setViewing(null)
+  }
+
+  async function importSet() {
+    setImportNote(null)
+    const result = await window.api.questionSets.import()
+    if ('cancelled' in result) return
+    if (!result.ok) {
+      setImportNote(result.error)
+      return
+    }
+    const next = result.set.questions
+    setPool(next)
+    setPoolName(result.set.name)
+    setFilter('All')
+    nextQuestion('All', next)
+    setImportNote(`Loaded "${result.set.name}" with ${next.length} questions.`)
+  }
+
+  function useBuiltIn() {
+    setPool(BUILT_IN_QUESTIONS)
+    setPoolName(null)
+    setFilter('All')
+    nextQuestion('All', BUILT_IN_QUESTIONS)
+    setImportNote(null)
+  }
+
+  async function exportSession(id: string) {
+    setExportNote(null)
+    const result = await window.api.sessions.exportOne(id)
+    setExportNote(result.ok ? 'Exported. Only the question, your answer, and the feedback were included.' : result.error)
   }
 
   async function getFeedback() {
@@ -120,13 +152,13 @@ export default function App() {
             aria-label="Question category"
             value={filter}
             onChange={(e) => {
-              const f = e.target.value as Filter
+              const f = e.target.value
               setFilter(f)
               nextQuestion(f)
             }}
           >
             <option value="All">All categories</option>
-            {CATEGORIES.map((c) => (
+            {categoriesOf(pool).map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -135,6 +167,16 @@ export default function App() {
           <button onClick={() => nextQuestion()} disabled={busy}>
             Next question
           </button>
+          <button onClick={() => void importSet()} disabled={busy}>
+            Import question set
+          </button>
+          {poolName && (
+            <button onClick={useBuiltIn} disabled={busy}>
+              Use built-in questions
+            </button>
+          )}
+          {poolName && <p className="hint">Set: {poolName}</p>}
+          {importNote && <p className="hint">{importNote}</p>}
         </div>
         <div className="sidebar-head">
           <strong>History</strong>
@@ -186,7 +228,9 @@ export default function App() {
             <h2 style={{ fontSize: 16, margin: '4px 0' }}>{viewing.question}</h2>
             <div className="toolbar">
               <button onClick={() => setViewing(null)}>Back to practice</button>
+              <button onClick={() => void exportSession(viewing.id)}>Export this session</button>
             </div>
+            {exportNote && <p className="hint">{exportNote}</p>}
             <strong>Your answer</strong>
             <pre style={{ whiteSpace: 'pre-wrap', font: 'inherit', margin: 0 }}>
               {viewing.answer}

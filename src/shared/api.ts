@@ -25,6 +25,12 @@ export interface FeedbackChunk {
   delta: string
 }
 
+// A company-provided question set. Questions only: no answers or scoring.
+export interface QuestionSet {
+  name: string
+  questions: { category: string; text: string }[]
+}
+
 export interface MockApi {
   key: {
     status(): Promise<boolean>
@@ -38,6 +44,12 @@ export interface MockApi {
   sessions: {
     list(): Promise<SavedSession[]>
     save(requestId: string, session: { question: string; answer: string; feedback: string }): Promise<Result>
+    // Candidate-initiated only. Opens a save dialog for one session.
+    exportOne(id: string): Promise<Result>
+  }
+  questionSets: {
+    // Opens a file picker. Resolves with the parsed set, an error, or cancelled.
+    import(): Promise<{ ok: true; set: QuestionSet } | { ok: false; error: string } | { ok: false; cancelled: true }>
   }
   feedback: {
     start(requestId: string, consentToken: string, question: string, answer: string): Promise<Result>

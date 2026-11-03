@@ -1,7 +1,10 @@
-export const CATEGORIES = ['Backend', 'System design', 'Behavioral'] as const
-export type Category = (typeof CATEGORIES)[number]
+export interface QuestionItem {
+  category: string
+  text: string
+}
 
-export const QUESTIONS: { category: Category; text: string }[] = [
+// Built-in practice questions. A company question set, once imported, replaces this pool for the session.
+export const BUILT_IN_QUESTIONS: QuestionItem[] = [
   { category: 'Backend', text: 'Explain how Spring Boot auto-configuration decides which beans to create.' },
   { category: 'Backend', text: 'How would you design a rate limiter for a public REST API?' },
   { category: 'Backend', text: 'What is the difference between optimistic and pessimistic locking, and when would you pick each?' },
@@ -13,7 +16,12 @@ export const QUESTIONS: { category: Category; text: string }[] = [
   { category: 'Behavioral', text: 'Why do you want to change direction in your career?' }
 ]
 
-export function pickQuestion(filter: Category | 'All'): string {
-  const pool = QUESTIONS.filter((q) => filter === 'All' || q.category === filter)
-  return pool[Math.floor(Math.random() * pool.length)].text
+export function categoriesOf(pool: QuestionItem[]): string[] {
+  return [...new Set(pool.map((q) => q.category))]
+}
+
+export function pickFrom(pool: QuestionItem[], filter: string): string {
+  const matches = pool.filter((q) => filter === 'All' || q.category === filter)
+  const source = matches.length > 0 ? matches : pool
+  return source[Math.floor(Math.random() * source.length)].text
 }
