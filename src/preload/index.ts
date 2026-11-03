@@ -17,6 +17,12 @@ const api: MockApi = {
     save: (requestId, session) => ipcRenderer.invoke('sessions:save', requestId, session),
     exportOne: (id) => ipcRenderer.invoke('sessions:export', id)
   },
+  voice: {
+    acknowledge: () => ipcRenderer.invoke('voice:acknowledge')
+  },
+  transcribe: {
+    run: (requestId, voiceToken, audio) => ipcRenderer.invoke('transcribe:run', requestId, voiceToken, audio)
+  },
   questionSets: {
     import: () => ipcRenderer.invoke('questionsets:import')
   },

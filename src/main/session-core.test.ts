@@ -26,3 +26,18 @@ test('a corrupt file returns null instead of throwing', () => {
 test('a file missing core fields is skipped', () => {
   assert.equal(parseStoredSession(JSON.stringify({ id: 'x' })), null)
 })
+
+test('a voice session keeps its source and transcript', () => {
+  const raw = JSON.stringify({ id: 'v', question: 'Q', answer: 'A', feedback: 'F', createdAt: 1, source: 'voice', transcript: 'spoken words' })
+  const s = parseStoredSession(raw)
+  assert.ok(s)
+  assert.equal(s.source, 'voice')
+  assert.equal(s.transcript, 'spoken words')
+})
+
+test('an unknown source value is dropped, not kept', () => {
+  const raw = JSON.stringify({ id: 'v', question: 'Q', answer: 'A', feedback: 'F', createdAt: 1, source: 'audio' })
+  const s = parseStoredSession(raw)
+  assert.ok(s)
+  assert.equal(s.source, undefined)
+})

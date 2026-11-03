@@ -10,8 +10,19 @@ export interface SavedSession {
   // Set by the main process when the practice notice was accepted.
   // Missing on sessions saved before consent gating existed (legacy data).
   consentAt?: number
+  // How the answer was given. Missing on older sessions, which were all typed.
+  source?: 'typed' | 'voice'
+  // The transcript of a voice answer. Audio is never stored.
+  transcript?: string
   createdAt: number
 }
+
+export const VOICE_NOTICE = [
+  'Your voice is recorded only while you hold the button, and it is turned into text on this computer.',
+  'The audio is discarded after it is transcribed. It is not saved and not sent anywhere.',
+  'The transcript is saved with your session only if you finish the answer.',
+  'Do not use this during a live interview or a proctored test.'
+]
 
 export const PRACTICE_NOTICE = [
   'This is practice. The AI reads your answer and gives feedback on it.',
@@ -46,6 +57,13 @@ export interface MockApi {
     save(requestId: string, session: { question: string; answer: string; feedback: string }): Promise<Result>
     // Candidate-initiated only. Opens a save dialog for one session.
     exportOne(id: string): Promise<Result>
+  }
+  voice: {
+    // Single-use token for one voice answer. Accepted voice notice required before recording.
+    acknowledge(): Promise<string>
+  }
+  transcribe: {
+    run(requestId: string, voiceToken: string, audio: Uint8Array): Promise<{ ok: true; text: string } | { ok: false; error: string }>
   }
   questionSets: {
     // Opens a file picker. Resolves with the parsed set, an error, or cancelled.

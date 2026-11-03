@@ -6,6 +6,7 @@ import { registerFeedbackHandlers } from './feedback'
 import { registerSecretHandlers } from './secrets'
 import { registerSessionHandlers } from './sessions'
 import { registerQuestionSetHandlers } from './question-sets'
+import { registerTranscribeHandlers } from './transcribe'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -52,6 +53,7 @@ app.whenReady().then(() => {
   registerFeedbackHandlers()
   registerSessionHandlers()
   registerQuestionSetHandlers()
+  registerTranscribeHandlers()
   createWindow()
 
   app.on('activate', () => {
